@@ -1,0 +1,71 @@
+{
+  "name": "BookAI Appointment Reminders",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "appointment",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.event}}",
+              "operation": "equal",
+              "value2": "appointment.created"
+            }
+          ]
+        }
+      },
+      "name": "Is Created",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "amount": 24,
+        "unit": "hours"
+      },
+      "name": "Wait 24h",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [650, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{$env.APP_URL}}/api/webhooks/n8n",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={\"action\":\"send_reminder\",\"appointment\":{{$json.appointment}}}"
+      },
+      "name": "Send Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [850, 200]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Is Created", "type": "main", "index": 0 }]]
+    },
+    "Is Created": {
+      "main": [
+        [{ "node": "Wait 24h", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Wait 24h": {
+      "main": [[{ "node": "Send Reminder", "type": "main", "index": 0 }]]
+    }
+  }
+}
